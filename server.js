@@ -36,7 +36,7 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'REPLACE_WITH_YOUR_KEY';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyA1zStCx3m5-XoOanUgqfuYz7XxKlA8xVA';
 const ai = new GoogleGenAI(GEMINI_API_KEY);
 
 // Stores
