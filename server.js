@@ -1,4 +1,4 @@
-// server.js - Backend ConstruFácil Pro Elite
+// server.js - Backend ConstruFácil Pro Elite (CORRIGIDO)
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -17,7 +17,15 @@ const GEMINI_MODELS = [
     'gemini-pro' 
 ];
 
+// Configuração de CORS para Express (API /api/gemini)
+// Ajustamos para listar o seu domínio explicitamente.
+const allowedOrigins = ['https://constru.novaversao.site', 'http://localhost:3000']; 
+app.use(cors({
+    origin: allowedOrigins
+}));
+
 // Configuração do Socket.io para aceitar conexões do celular/navegador
+// O Socket.io aceita "*" para permitir qualquer cliente WebSocket.
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
@@ -29,7 +37,6 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyA1zStCx3m5-XoOanUgqf
 const ai = new GoogleGenAI(GEMINI_API_KEY);
 
 // Middlewares
-app.use(cors());
 app.use(express.json());
 
 // --- Rota da IA (Gemini) ---
@@ -66,8 +73,8 @@ app.post('/api/gemini', async (req, res) => {
     }
 
     if (finalResponse) {
-        // Envia a resposta do primeiro modelo bem-sucedido
-        const text = finalResponse.text ? finalResponse.text() : `Sem resposta da IA. (Modelo: ${successfulModel})`;
+        // CORREÇÃO CRÍTICA: response.text é uma PROPRIEDADE, não uma FUNÇÃO.
+        const text = finalResponse.text ? finalResponse.text : `Sem resposta da IA. (Modelo: ${successfulModel})`;
         res.json({ text: text });
     } else {
         // Se o loop terminou e não houve sucesso em nenhum modelo
