@@ -1,4 +1,7 @@
-// server.js - Backend ConstruFácil Pro Elite (atualizado com contingência IA e profissionais)
+// server.js - Backend ConstruFácil Pro Elite (atualizado)
+// Correções: contingência IA com 5 modelos, profissionais com ownerId único e exclusão,
+// chat com avatar, CORS ampliado, rota para remover cadastro por ownerId.
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -17,7 +20,7 @@ const GEMINI_MODELS = [
   'gemini-1.5-pro',
 ];
 
-// CORS para APIs
+// CORS
 const allowedOrigins = [
   'https://constru.novaversao.site',
   'https://construfacilpro.novaversao.site',
@@ -27,7 +30,7 @@ const allowedOrigins = [
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
-// Socket.io (libera WS amplo)
+// Socket.io
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
@@ -36,27 +39,28 @@ const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'REPLACE_WITH_YOUR_KEY';
 const ai = new GoogleGenAI(GEMINI_API_KEY);
 
-// In-memory stores
-let chatMessages = []; // mensagens das últimas 24h
+// Stores
+let chatMessages = []; // últimas 24h
 let professionals = []; // {id, ownerId, name, trade, contact, desc, lat, lng, createdAt}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Limpeza automática a cada 30 min
+// Limpeza periódica
 setInterval(() => {
   const now = Date.now();
   chatMessages = chatMessages.filter(m => now - new Date(m.timestamp).getTime() < DAY_MS);
-  professionals = professionals.filter(p => now - new Date(p.createdAt).getTime() < (30 * DAY_MS)); // TTL 30 dias
+  // TTL de profissionais reduzido se necessário, mas vamos manter 30 dias e também permitir exclusão ativa
+  professionals = professionals.filter(p => now - new Date(p.createdAt).getTime() < (30 * DAY_MS));
 }, 30 * 60 * 1000);
 
-// IA (Gemini) com contingência em 5 modelos
+// IA com contingência
 app.post('/api/gemini', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Prompt inválido.' });
   }
 
-  const systemInstruction = 'Você é o Consultor Técnico Elite do ConstruFácil. Responda de forma curta, direta e técnica sobre engenharia civil. Use formatação bonita.';
+  const systemInstruction = 'Você é o Consultor Técnico Elite do ConstruFácil. Responda de forma curta, direta e técnica sobre engenharia civil. Use formatação clara.';
 
   let finalText = null;
   for (const modelName of GEMINI_MODELS) {
@@ -67,7 +71,6 @@ app.post('/api/gemini', async (req, res) => {
         config: { systemInstruction }
       });
 
-      // Alguns SDKs retornam output diferente; padroniza extração
       if (response && typeof response.text === 'string' && response.text.length) {
         finalText = response.text;
       } else if (response && response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
@@ -77,7 +80,6 @@ app.post('/api/gemini', async (req, res) => {
       if (finalText) break;
     } catch (error) {
       console.error(`Falha com o modelo ${modelName}:`, error.message);
-      // continua para o próximo modelo
     }
   }
 
@@ -90,7 +92,7 @@ app.post('/api/gemini', async (req, res) => {
   });
 });
 
-// Profissionais: listar, cadastrar, deletar do próprio
+// Profissionais
 app.get('/api/professionals', (req, res) => {
   res.json({ professionals });
 });
@@ -101,7 +103,7 @@ app.post('/api/professionals', (req, res) => {
     return res.status(400).json({ error: 'Dados inválidos para cadastro.' });
   }
 
-  // Remove qualquer cadastro anterior do mesmo ownerId (garante um por usuário)
+  // garante um cadastro por usuário
   professionals = professionals.filter(p => p.ownerId !== ownerId);
 
   const pro = {
@@ -127,17 +129,17 @@ app.delete('/api/professionals/:ownerId', (req, res) => {
   res.json({ ok: true, removed: before - after });
 });
 
-// Chat realtime
+// Chat realtime (com avatar)
 io.on('connection', (socket) => {
   console.log(`🔌 Conectado: ${socket.id}`);
 
-  // envia histórico atual
   socket.emit('chat_history', chatMessages);
 
   socket.on('send_message', (data) => {
     const msg = {
       id: Date.now(),
       nickname: data.nickname || 'Anônimo',
+      avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nickname || 'Anon')}`,
       content: data.content,
       timestamp: new Date(),
       isUser: false
@@ -154,7 +156,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Server init
 server.listen(PORT, () => {
   console.log(`🚀 Servidor Elite rodando em: http://localhost:${PORT}`);
 });

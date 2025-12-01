@@ -1,7 +1,7 @@
 {
   "name": "construfacil-pro-elite",
-  "version": "2.0.0",
-  "description": "App de Engenharia Elite com IA e Chat Realtime",
+  "version": "2.1.0",
+  "description": "App de Engenharia Elite com IA, Chat Realtime, Profissionais e integração de anúncios/billing via Android",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,7 +12,15 @@
     "express": "^4.21.2",
     "socket.io": "^4.8.1"
   },
-  "keywords": [],
+  "keywords": [
+    "engenharia",
+    "construcao",
+    "gemini",
+    "socket.io",
+    "android",
+    "ads",
+    "billing"
+  ],
   "author": "",
   "license": "ISC"
 }
