@@ -99,12 +99,11 @@ app.get('/api/professionals', (req, res) => {
 });
 
 app.post('/api/professionals', (req, res) => {
-  const { ownerId, name, trade, contact, desc, lat, lng } = req.body;
-  if (!ownerId || !name || !trade || !contact || typeof lat !== 'number' || typeof lng !== 'number') {
+  const { ownerId, name, trade, contact, desc, city, lat, lng } = req.body;
+  if (!ownerId || !name || !trade || !contact || !city || typeof lat !== 'number' || typeof lng !== 'number') {
     return res.status(400).json({ error: 'Dados inválidos para cadastro.' });
   }
 
-  // garante um cadastro por usuário
   professionals = professionals.filter(p => p.ownerId !== ownerId);
 
   const pro = {
@@ -114,6 +113,7 @@ app.post('/api/professionals', (req, res) => {
     trade,
     contact,
     desc: desc || '',
+    city,
     lat,
     lng,
     createdAt: new Date().toISOString()
